@@ -1,4 +1,5 @@
 use board::Board;
+use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
@@ -10,6 +11,7 @@ pub struct Level {
   start: Pos,
   goal: Pos,
   moves: u8,
+  name: String,
 }
 
 impl Level {
@@ -56,11 +58,40 @@ impl Level {
       }
     }
 
+    let name = filename.to_string();
     Level {
       board,
       start,
       goal,
       moves,
+      name,
+    }
+  }
+
+  pub fn solve_all() {
+    let mut def_levels: Vec<_> = fs::read_dir("levels/default")
+      .unwrap()
+      .map(|r| r.unwrap())
+      .collect();
+    let mut diff_levels: Vec<_> = fs::read_dir("levels/difficult")
+      .unwrap()
+      .map(|r| r.unwrap())
+      .collect();
+    let mut lud_levels: Vec<_> = fs::read_dir("levels/ludicrous")
+      .unwrap()
+      .map(|r| r.unwrap())
+      .collect();
+
+    def_levels.sort_by_key(|dir| dir.path());
+    diff_levels.sort_by_key(|dir| dir.path());
+    lud_levels.sort_by_key(|dir| dir.path());
+
+    let mut all_levels = def_levels;
+    all_levels.append(&mut diff_levels);
+    all_levels.append(&mut lud_levels);
+
+    for level in all_levels {
+      Level::load(level.path().to_str().unwrap()).solve();
     }
   }
 
@@ -73,7 +104,7 @@ impl Level {
   fn solve_aux(&self, moves_remaining: u8, player: Pos, moves: Vec<Move>) -> bool {
     // Check if we've reached the goal
     if player == self.goal {
-      println!("Solved in {}/{} moves:", moves.len(), self.moves);
+      println!("Solved {} in {} moves:", self.name, moves.len());
       println!("{:?}", moves);
       return true;
     }
