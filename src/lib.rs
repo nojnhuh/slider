@@ -9,14 +9,14 @@ const NUM_MOVES: u8 = 4;
 
 pub use level::Level;
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Pos(pub usize, pub usize);
 
 impl Pos {
   fn do_move(&self, mv: Move) -> Pos {
     match mv {
-      Move::Up => Pos(self.0, self.1 + 1),
-      Move::Down => Pos(self.0, self.1 - 1),
+      Move::Up => Pos(self.0, self.1 - 1),
+      Move::Down => Pos(self.0, self.1 + 1),
       Move::Left => Pos(self.0 - 1, self.1),
       Move::Right => Pos(self.0 + 1, self.1),
     }

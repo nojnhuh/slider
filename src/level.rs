@@ -1,6 +1,9 @@
 use board::Board;
+use std::fs::File;
+use std::io::prelude::*;
+use std::io::BufReader;
 use std::mem;
-use {Move, Pos, LEVEL_HEIGHT, LEVEL_SIZE, LEVEL_WIDTH, NUM_MOVES};
+use {Move, Pos, LEVEL_SIZE, NUM_MOVES};
 
 pub struct Level {
   board: Board,
@@ -10,22 +13,47 @@ pub struct Level {
 }
 
 impl Level {
-  pub fn new(blocks: Vec<Pos>, start: Pos, goal: Pos, moves: u8) -> Level {
+  pub fn load(filename: &str) -> Level {
+    let f = File::open(filename).expect("");
+    let mut reader = BufReader::new(f);
+    let mut buf = String::new();
+
+    reader.read_line(&mut buf).expect("");
+    buf.pop();
+    let moves = buf.parse::<u8>().unwrap();
+
+    let mut current_pos = Pos(0, 0);
+
+    let mut board_str = String::new();
+    reader.read_to_string(&mut board_str).expect("");
+    board_str.pop();
+
+    let mut start = current_pos;
+    let mut goal = current_pos;
     let mut board = Board([false; LEVEL_SIZE]);
-
-    // Set outer boundary
-    for i in 0..LEVEL_WIDTH {
-      board[Pos(i, 0)] = true;
-      board[Pos(i, LEVEL_HEIGHT - 1)] = true;
-    }
-    for j in 1..LEVEL_HEIGHT - 1 {
-      board[Pos(0, j)] = true;
-      board[Pos(LEVEL_WIDTH - 1, j)] = true;
-    }
-
-    // Set level-dependent blocks
-    for block in blocks {
-      board[block] = true;
+    for c in board_str.chars() {
+      match c {
+        '\n' => {
+          current_pos.1 += 1;
+          current_pos.0 = 0;
+        }
+        'X' => {
+          board[current_pos] = true;
+          current_pos.0 += 1;
+        }
+        'S' => {
+          start = current_pos;
+          current_pos.0 += 1;
+        }
+        'G' => {
+          goal = current_pos;
+          current_pos.0 += 1;
+        }
+        'O' => {
+          current_pos.0 += 1;
+        }
+        _ => (),
+      }
     }
 
     Level {
@@ -45,7 +73,7 @@ impl Level {
   fn solve_aux(&self, moves_remaining: u8, player: Pos, moves: Vec<Move>) -> bool {
     // Check if we've reached the goal
     if player == self.goal {
-      println!("Solved in {} moves:", moves.len());
+      println!("Solved in {}/{} moves:", moves.len(), self.moves);
       println!("{:?}", moves);
       return true;
     }
